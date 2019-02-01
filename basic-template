@@ -44,13 +44,6 @@ items:
           kind: ImageStreamTag
           name: spring-n-app:latest
       type: ImageChange
-	  
-- apiVersion: v1
-  kind: ImageStream
-  metadata:
-    name: spring-openshift
-  spec:
-    dockerImageRepository: testvinay/spring-n-app
 - apiVersion: v1
   kind: Route
   metadata:
