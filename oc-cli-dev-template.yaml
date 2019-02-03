@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Template
+labels:
+  template: spring-openshift-template
+metadata:
+  annotations:
+    description: Application for a basic gitlab and spring based pipeline
+    iconClass: icon-spring
+    tags: java,spring
+    version: 1.0.0
+  name: spring-openshift-template
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: spring-openshift
+  spec:
+    replicas: 3
+    selector:
+      deploymentconfig: spring-openshift
+    strategy:
+      # We set the type of strategy to Recreate, which means that it will be scaled down prior to being scaled up
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          deploymentconfig: spring-openshift
+      spec:
+        containers:
+        - image: testvinay/spring-n-app
+          name: spring-openshift
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+         - spring-openshift
+        from:
+          kind: ImageStreamTag
+          name: spring-n-app:latest
+      type: ImageChange
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: spring-openshift
+  spec:
+    to:
+      kind: Service
+      name: spring-openshift
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: spring-openshift
+  spec:
+    ports:
+    - port: 8080
+      targetPort: 8080
+    selector:
+      deploymentconfig: spring-openshift
