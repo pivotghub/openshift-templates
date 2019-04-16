@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: Template
+labels:
+  template: shoppingcart-ui-template
+metadata:
+  annotations:
+    description: shoppingcart ui
+    iconClass: icon-spring
+    tags: java,spring
+    version: 1.0.0
+  name: shoppingcart-ui-template
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: shoppingcart-ui
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: shoppingcart-ui
+    strategy:
+      # We set the type of strategy to Recreate, which means that it will be scaled down prior to being scaled up
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          deploymentconfig: shoppingcart-ui
+      spec:
+        containers:
+        - image: vaanay/shoppingcart-ui
+          name: shoppingcart-ui
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+        initContainers:
+          - name: init-order
+            image: busybox:1.28
+            command: ['sh', '-c', 'wget -c http://order-service:8383/actuator/health']
+          - name: init-catalog
+            image: busybox:1.28
+            command: ['sh', '-c', 'wget -c http://catalog-service:8383/actuator/health']
+          - name: init-inventory
+            image: busybox:1.28
+            command: ['sh', '-c', 'wget -c http://inventory-service:8282/actuator/health']
+  triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+         - shoppingcart-ui
+        from:
+          kind: ImageStreamTag
+          name: spring-n-app:latest
+      type: ImageChange
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: shoppingcart-ui
+  spec:
+    to:
+      kind: Service
+      name: shoppingcart-ui
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: shoppingcart-ui
+  spec:
+    ports:
+    - port: 8080
+      targetPort: 8080
+    selector:
+      deploymentconfig: shoppingcart-ui
