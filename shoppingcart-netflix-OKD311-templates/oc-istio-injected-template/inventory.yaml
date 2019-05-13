@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: DeploymentConfig
+metadata:
+    name: inventory-service
+    labels:
+    app: inventory-service
+    version: v1
+spec:
+    replicas: 1
+    template:
+      metadata:
+        labels:
+          app: inventory-service
+          version: v1
+      spec:
+        selector:
+          deploymentconfig: inventory-service
+        containers:
+        - image: vaanay/inventory-service
+          livenessProbe:
+            failureThreshold: 10
+            httpGet:
+              path: /actuator/health
+              port: 8282
+              scheme: HTTP
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: inventory-service
+          ports:
+          - containerPort: 8282
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 10
+            httpGet:
+              httpGet:
+              path: /actuator/health
+              port: 8282
+              scheme: HTTP
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+        initContainers:
+          - name: init-api-gateway
+            image: busybox:1.28
+            command: ['sh', '-c', 'wget -c http://api-gateway-server:8765/actuator/health']            
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-service
+  labels:
+    app: inventory-service
+    service: inventory-service
+spec:
+  ports:
+  - port: 8282
+    name: http
+  selector:
+    app: inventory-service
+---
+apiVersion: v1
+kind: Route
+metadata:
+    name: inventory-service
+spec:
+    to:
+      kind: Service
+      name: inventory-service
