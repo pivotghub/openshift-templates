@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: DeploymentConfig
+metadata:
+  name: catalog-service
+  labels:
+    app: catalog-service
+    version: v1
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: catalog-service
+        version: v1
+    spec:
+      selector:
+        deploymentconfig: catalog-service
+      containers:
+        - image: vaanay/catalog-service
+          livenessProbe:
+            failureThreshold: 10
+            httpGet:
+              path: /actuator/health
+              port: 8383
+              scheme: HTTP
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: api-gateway-server
+          ports:
+          - containerPort: 8383
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 10
+            httpGet:
+              httpGet:
+              path: /actuator/health
+              port: 8765
+              scheme: HTTP
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+      initContainers:
+          - name: init-api-gateway
+            image: busybox:1.28
+            command: ['sh', '-c', 'wget -c http://api-gateway-server:8765/actuator/health']            
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog-service
+  labels:
+    app: catalog-service
+    service: catalog-service
+spec:
+  ports:
+  - port: 8383
+    name: http
+  selector:
+    app: catalog-service
+---
+apiVersion: v1
+kind: Route
+metadata:
+    name: catalog-service
+spec:
+    to:
+      kind: Service
+      name: catalog-service
+
