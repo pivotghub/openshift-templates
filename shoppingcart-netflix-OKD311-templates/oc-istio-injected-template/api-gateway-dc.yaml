@@ -50,7 +50,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: api-gateway-service
+  name: api-gateway-server
   labels:
     app: api-gateway-server
     service: api-gateway-server
@@ -68,4 +68,4 @@ metadata:
 spec:
     to:
       kind: Service
-      name: api-gateway-service
+      name: api-gateway-server
